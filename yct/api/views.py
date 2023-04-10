@@ -4,6 +4,8 @@ from .models import SchoolUser
 from rest_framework.response import Response
 from rest_framework import status
 from .helper import jsonify_user
+from rest_framework_simplejwt.tokens import RefreshToken
+from .helper import jsonify_user
 
 # Create your views here.
 class SignUpStudent(BaseView):
@@ -98,3 +100,55 @@ class SignUpBursar(BaseView):
             }
         return Response(res, status=status.HTTP_201_CREATED)
         
+        
+class LoginStudent(BaseView):
+    required_post_fields = ["matric_no", "password"]
+    def post(self, request):
+        student = SchoolUser.objects.filter(matric_no=request.data.get("matric_no")).first()
+        if not student:
+            res = {
+                "code":404,
+                "message": "Student doesn't exist"
+            }
+            return Response(res, status=status.HTTP_404_NOT_FOUND)
+        if student.check_password(raw_password=request.data.get("password")):
+            token = RefreshToken.for_user(student)
+            print(token)
+            res = {
+                "code":200,
+                "message": "Login Successful",
+                "student_data": jsonify_user(student),
+                "token": str(token.access_token)
+            }
+            return Response(res, status=status.HTTP_200_OK)
+        res = {
+            "code":401,
+            "message": "Incorrect Password"
+        }
+        return Response(res, status=status.HTTP_401_UNAUTHORIZED)
+    
+class LoginStaff(BaseView):
+    required_post_fields = ["staff_id", "password"]
+    def post(self, request):
+        staff = SchoolUser.objects.filter(staff_id=request.data.get("staff_id")).first()
+        if not staff:
+            res = {
+                "code":404,
+                "message": "Staff doesn't exist"
+            }
+            return Response(res, status=status.HTTP_404_NOT_FOUND)
+        if staff.check_password(raw_password=request.data.get("password")):
+            token = RefreshToken.for_user(staff)
+            print(token)
+            res = {
+                "code":200,
+                "message": "Login Successful",
+                "staff_data": jsonify_user(staff),
+                "token": str(token.access_token)
+            }
+            return Response(res, status=status.HTTP_200_OK)
+        res = {
+            "code":401,
+            "message": "Incorrect Password"
+        }
+        return Response(res, status=status.HTTP_401_UNAUTHORIZED)
