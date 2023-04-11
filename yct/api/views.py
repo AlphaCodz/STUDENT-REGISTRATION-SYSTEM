@@ -9,7 +9,7 @@ from .helper import jsonify_user
 
 # Create your views here.
 class SignUpStudent(BaseView):
-    required_post_fields = ["first_name", "last_name", "email", "matric_no", "password"]
+    required_post_fields = ["first_name", "last_name", "email", "matric_no", "date_of_birth", "home_address", "programme", "school", "department", "level", "place_of_birth", "state_of_origin", "local_government_area", "parent_name", "parent_address", "parent_contact","password"]
     def post(self, request, format=None):
         # Call Query Field
         email=request.data.get("email")
@@ -43,6 +43,18 @@ class SignUpStudent(BaseView):
         student = SchoolUser()
         student.first_name = request.data.get("first_name")
         student.last_name = request.data.get("last_name")
+        student.date_of_birth = request.data.get("date_of_birth")
+        student.home_address = request.data.get("home_address")
+        student.programme = request.data.get("programme")
+        student.school = request.data.get("school")
+        student.department = request.data.get("department")
+        student.level = request.data.get("level")
+        student.place_of_birth = request.data.get("place_of_birth")
+        student.state_of_origin = request.data.get("state_of_origin")
+        student.local_government_area = request.data.get("local_government_area")
+        student.parent_name = request.data.get("parent_name")
+        student.parent_address = request.data.get("parent_address")
+        student.parent_contact = request.data.get("parent_contact")
         student.matric_no = matric_no
         student.email = email
         student.set_password(raw_password=request.data.get("password"))
