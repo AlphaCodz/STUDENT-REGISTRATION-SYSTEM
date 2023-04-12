@@ -13,6 +13,7 @@ from rest_framework.decorators import api_view, APIView
 class SignUpStudent(BaseView):
     required_post_fields = ["first_name", "last_name", "email", "matric_no", "date_of_birth", "home_address", "programme", "school", "department", "level", "place_of_birth", "state_of_origin", "local_government_area", "parent_name", "parent_address", "parent_contact","password"]
     def post(self, request, format=None):
+        data = request.data
         # Call Query Field
         email=request.data.get("email")
         matric_no = request.data.get("matric_no")
@@ -43,23 +44,23 @@ class SignUpStudent(BaseView):
             return Response(res, status=status.HTTP_400_BAD_REQUEST)
         
         student = SchoolUser()
-        student.first_name = request.data.get("first_name")
-        student.last_name = request.data.get("last_name")
-        student.date_of_birth = request.data.get("date_of_birth")
-        student.home_address = request.data.get("home_address")
-        student.programme = request.data.get("programme")
-        student.school = request.data.get("school")
-        student.department = request.data.get("department")
-        student.level = request.data.get("level")
-        student.place_of_birth = request.data.get("place_of_birth")
-        student.state_of_origin = request.data.get("state_of_origin")
-        student.local_government_area = request.data.get("local_government_area")
-        student.parent_name = request.data.get("parent_name")
-        student.parent_address = request.data.get("parent_address")
-        student.parent_contact = request.data.get("parent_contact")
+        student.first_name = data.get("first_name")
+        student.last_name = data.get("last_name")
+        student.date_of_birth = data.get("date_of_birth")
+        student.home_address = data.get("home_address")
+        student.programme = data.get("programme")
+        student.school = data.get("school")
+        student.department = data.get("department")
+        student.level = data.get("level")
+        student.place_of_birth = data.get("place_of_birth")
+        student.state_of_origin = data.get("state_of_origin")
+        student.local_government_area = data.get("local_government_area")
+        student.parent_name = data.get("parent_name")
+        student.parent_address = data.get("parent_address")
+        student.parent_contact = data.get("parent_contact")
         student.matric_no = matric_no
         student.email = email
-        student.set_password(raw_password=request.data.get("password"))
+        student.set_password(raw_password=data.get("password"))
         student.is_student=True
         student.save()
         res = {
@@ -105,7 +106,6 @@ class SignUpBursar(BaseView):
         bursar = SchoolUser()
         bursar.first_name = data["first_name"]
         bursar.last_name = data["last_name"]
-        
         bursar.staff_id = staff_id
         bursar.email = email
         bursar.set_password(raw_password=data.get("password"))
