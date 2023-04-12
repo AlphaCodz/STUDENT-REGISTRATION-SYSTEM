@@ -22,7 +22,7 @@ class Department(models.Model):
     def __str__(self):
         return self.department
     
-class PROGRAMME(models.Model):
+class Programme(models.Model):
     PROGRAMME = (
         ("ND PART-TIME", "ND PART-TIME"),
         ("ND FULL-TIME", "ND FULL-TIME"),
@@ -75,8 +75,8 @@ class SchoolUser(AbstractUser):
     department= models.OneToOneField(Department, on_delete=models.PROTECT, null=True)
     level = models.ForeignKey(Level, on_delete=models.PROTECT, null=True)
     session = models.ForeignKey(Session, on_delete=models.CASCADE, null=True)
-    place_of_birth = models.CharField(max_length=10, null=True)
-    state_of_origin = models.CharField(max_length=10, null=True)
+    place_of_birth = models.CharField(max_length=100, null=True)
+    state_of_origin = models.CharField(max_length=50, null=True)
     local_government_area = models.CharField(max_length=50, null=True)
     parent_name = models.CharField(max_length=150, null=True)
     parent_address = models.CharField(max_length=200, null=True)

@@ -1,73 +1,23 @@
 from django.shortcuts import render
 from helpers.views import BaseView
-from .models import SchoolUser, Course, Department
+from .models import SchoolUser, Course, Department, Programme, Session, Level
 from rest_framework.response import Response
 from rest_framework import status
 from .helper import jsonify_user
 from rest_framework_simplejwt.tokens import RefreshToken
 from .helper import jsonify_user
 from rest_framework.decorators import api_view, APIView
+from .serializers import SchoolUserSerializer
 
 
-# Create your views here.
-class SignUpStudent(BaseView):
-    required_post_fields = ["first_name", "last_name", "email", "matric_no", "date_of_birth", "home_address", "programme", "school", "department", "level", "place_of_birth", "state_of_origin", "local_government_area", "parent_name", "parent_address", "parent_contact","password"]
+class SignUpStudent(APIView):
+    serializer_class = SchoolUserSerializer
     def post(self, request, format=None):
-        data = request.data
-        # Call Query Field
-        email=request.data.get("email")
-        matric_no = request.data.get("matric_no")
-        password = request.data.get("password")
-        
-        #CHECK IF EMAIL EXISTS
-        if SchoolUser.objects.filter(email=email).exists():
-            res={
-                "code": 400,
-                "message":"Email is taken"
-            }
-            return Response(res, status=status.HTTP_400_BAD_REQUEST)
-       
-        # CHECK IF STUDENT MATRIC NUMBER EXISTS
-        if SchoolUser.objects.filter(matric_no=matric_no).exists():
-            res={
-                "code": 400,
-                "message": "Matric Number Exists"
-            }
-            return Response(res, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Check If User Sends Password
-        if not password:
-            res = {
-                "code":400,
-                "message": "Password is Required"
-                }
-            return Response(res, status=status.HTTP_400_BAD_REQUEST)
-        
-        student = SchoolUser()
-        student.first_name = data.get("first_name")
-        student.last_name = data.get("last_name")
-        student.date_of_birth = data.get("date_of_birth")
-        student.home_address = data.get("home_address")
-        student.programme = data.get("programme")
-        student.school = data.get("school")
-        student.department = data.get("department")
-        student.level = data.get("level")
-        student.place_of_birth = data.get("place_of_birth")
-        student.state_of_origin = data.get("state_of_origin")
-        student.local_government_area = data.get("local_government_area")
-        student.parent_name = data.get("parent_name")
-        student.parent_address = data.get("parent_address")
-        student.parent_contact = data.get("parent_contact")
-        student.matric_no = matric_no
-        student.email = email
-        student.set_password(raw_password=data.get("password"))
-        student.is_student=True
-        student.save()
-        res = {
-            "status": self.is_success(),
-            "data": jsonify_user(student)
-            }
-        return Response(res, status=status.HTTP_201_CREATED)
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class SignUpBursar(BaseView):
     required_post_fields = ["first_name", "last_name", "email", "staff_id"]
