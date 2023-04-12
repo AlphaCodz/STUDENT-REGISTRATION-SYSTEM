@@ -1,11 +1,13 @@
 from django.shortcuts import render
 from helpers.views import BaseView
-from .models import SchoolUser
+from .models import SchoolUser, Course, Department
 from rest_framework.response import Response
 from rest_framework import status
 from .helper import jsonify_user
 from rest_framework_simplejwt.tokens import RefreshToken
 from .helper import jsonify_user
+from rest_framework.decorators import api_view, APIView
+
 
 # Create your views here.
 class SignUpStudent(BaseView):
@@ -69,10 +71,12 @@ class SignUpStudent(BaseView):
 class SignUpBursar(BaseView):
     required_post_fields = ["first_name", "last_name", "email", "staff_id"]
     def post(self, request, format=None):
+        data = request.data
+        
             # Call Query Field
-        email=request.data.get("email")
-        staff_id = request.data.get("staff_id")
-        password = request.data.get("password")
+        email=data.get("email")
+        staff_id=data.get("staff_id")
+        password=data.get("password")
         
         #CHECK IF EMAIL EXISTS
         if SchoolUser.objects.filter(email=email).exists():
@@ -99,11 +103,12 @@ class SignUpBursar(BaseView):
             return Response(res, status=status.HTTP_400_BAD_REQUEST)
         
         bursar = SchoolUser()
-        bursar.first_name = request.data.get("first_name")
-        bursar.last_name = request.data.get("last_name")
+        bursar.first_name = data["first_name"]
+        bursar.last_name = data["last_name"]
+        
         bursar.staff_id = staff_id
         bursar.email = email
-        bursar.set_password(raw_password=request.data.get("password"))
+        bursar.set_password(raw_password=data.get("password"))
         bursar.is_bursar=True
         bursar.save()
         res = {
@@ -164,3 +169,47 @@ class LoginStaff(BaseView):
             "message": "Incorrect Password"
         }
         return Response(res, status=status.HTTP_401_UNAUTHORIZED)
+    
+    
+# FUNCTIONALITIES
+class CreateDepartment(APIView):
+    def post(self, request, format=None):
+        department = Department.objects.filter(department=request.data["department"]).exists()
+        if department:
+            res = {
+                "code": 400,
+                "message": "Department Already Exists"
+            }
+            return Response(res, status=status.HTTP_400_BAD_REQUEST)
+        department = Department.objects.create(
+            department=request.data["department"]
+        )
+        res = {
+            "code": 201,
+            "message": f"Department {department} added successfully"
+        }
+        return Response(res, status=status.HTTP_201_CREATED)
+
+@api_view(["POST"])
+def create_courses(request, id):
+    data=request.data
+    if not isinstance(data, list):
+        return Response({"error": "Invalid data format. You cannot register only one course"})
+    
+    # department id
+    try:
+        dep_id=Department.objects.get(id=id)
+    except Department.DoesNotExist:
+        return Response({"error": f"id {dep_id} does not exist"})
+    
+    courses = []
+    for course_data in data:
+        # check is a course whith the same title and code already exists
+        existing_course = Course.objects.filter(department=dep_id, title=course_data["title"], code=course_data["code"]).first()
+        if existing_course:
+            courses.append(existing_course)
+        else:
+            course = Course(department=dep_id, title=course_data['title'], code=course_data["code"])
+            course.save()
+            courses.append(course)        
+    return Response({'courses': [(course.id, course.title, course.code) for course in courses]})
