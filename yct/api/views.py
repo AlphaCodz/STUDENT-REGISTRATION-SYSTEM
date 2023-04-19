@@ -2,13 +2,16 @@ from django.shortcuts import render
 from helpers.views import BaseView
 from .models import SchoolUser, Course, Department, Programme, Session, Level
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status, generics
 from .helper import jsonify_user
 from rest_framework_simplejwt.tokens import RefreshToken
 from .helper import jsonify_user
 from rest_framework.decorators import api_view, APIView
-from .serializers import SchoolUserSerializer
-
+from .serializers import SchoolUserSerializer, CourseSerializer
+from django.db import transaction
+from .paystack import PaymentProcessor
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
 
 class SignUpStudent(APIView):
     serializer_class = SchoolUserSerializer
@@ -139,6 +142,9 @@ class CreateDepartment(APIView):
             "message": f"Department {department} added successfully"
         }
         return Response(res, status=status.HTTP_201_CREATED)
+    
+class CreateCourseView(generics.CreateAPIView):
+    serializer_class = CourseSerializer
 
 @api_view(["POST"])
 def create_courses(request, id):
@@ -163,3 +169,42 @@ def create_courses(request, id):
             course.save()
             courses.append(course)        
     return Response({'courses': [(course.id, course.title, course.code) for course in courses]})
+
+# CREATE 
+
+
+class CreateCourseProgrammeDepartmentLevelView(APIView):
+    @transaction.atomic
+    def post(self, request, format=None):
+        course_data = request.data.get('course_data', {})
+        programme_data = request.data.get('programme_data', {})
+        department_data = request.data.get('department_data', {})
+        level_data = request.data.get('level_data', {})
+        
+        # Create Department
+        department = Department.objects.create(**department_data)
+        department_id = department.id
+        # Create Programme
+        programme = Programme.objects.create(**programme_data)
+        programme_id = programme.id
+
+        # Create Level
+        level = Level.objects.create(**level_data)
+        level_id = level.id
+
+        # Create Course
+        course_data['department'] = department
+        course_data['level'] = level
+        course = Course.objects.create(**course_data)
+        course_id = course.id
+
+        return Response({'course_id': course_id, 'programme_id': programme_id, 'department_id': department_id, 'level_id': level_id}, status=status.HTTP_201_CREATED)
+
+@csrf_exempt
+def initializer_payment(request):
+    if request.method == "POST":
+        email= request.POST.get('email')
+        amount= request.POST.get('amount')
+        processor = PaymentProcessor(secret_key='sk_test_8bf0c5575575a946142b892294b33cc28dbf57f9')
+        url=processor.initialize_payment(email, amount)
+        return JsonResponse({'url':url})

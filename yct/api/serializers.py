@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import SchoolUser
+from .models import SchoolUser, Course
 
 
 class SchoolUserSerializer(serializers.ModelSerializer):
@@ -40,3 +40,18 @@ class SchoolUserSerializer(serializers.ModelSerializer):
         instance.set_password(password)
         instance.save()
         return instance
+    
+class CourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = "__all__"
+        
+    def create(self, validated_data):
+        course = Course.objects.create(
+            department = validated_data["department"],
+            title = validated_data["title"],
+            code = validated_data["code"],
+            level = validated_data["level"]
+        )
+        course.save()
+        return course
